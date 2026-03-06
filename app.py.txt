@@ -1,35 +1,221 @@
 import streamlit as st
-import pandas as pd
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.preprocessing import LabelEncoder
+from gtts import gTTS
+import io
+import random
+from PIL import Image
+from datetime import date
 
-st.title("🌱 KrishiSathi - AI Farming Assistant")
+# --- Voice function ---
+def speak_streamlit(text, lang):
+    tts = gTTS(text=text, lang=lang)
+    mp3_fp = io.BytesIO()
+    tts.write_to_fp(mp3_fp)
+    mp3_fp.seek(0)
+    st.audio(mp3_fp, format="audio/mp3")
 
-# Load dataset
-data = pd.read_csv("crop_dataset.csv")
+# --- Language selection ---
+language = st.selectbox("🌐 Select Language", ["English", "Kannada", "Hindi"])
+language_map = {"English": "en", "Kannada": "kn", "Hindi": "hi"}
+lang_code = language_map[language]
 
-# Encode text data
-le_soil = LabelEncoder()
-data["soil_type"] = le_soil.fit_transform(data["soil_type"])
+# --- Translations ---
+translations = {
+    "English": {
+        "title": "Krishi Sathi - Smart Farming Assistant",
+        "temperature": "Temperature (°C)",
+        "rainfall": "Rainfall (mm)",
+        "soil": "Select Soil Type",
+        "black": "Black Soil",
+        "red": "Red Soil",
+        "sandy": "Sandy Soil",
+        "clay": "Clay Soil",
+        "recommend": "Recommended Crop",
+        "fertilizer": "Recommended Fertilizer",
+        "water": "Water Requirement",
+        "duration": "Crop Growth Duration",
+        "high_yield": "High Yield Expected",
+        "moderate_yield": "Moderate Yield Expected",
+        "low_yield": "Low Yield Expected",
+        "low_rain": "Low rainfall detected. Consider drought-resistant crops.",
+        "high_temp": "High temperature detected. Ensure proper irrigation.",
+        "soil_moisture": "Soil Moisture Level (%)",
+        "dry_soil": "Soil is dry. Irrigation needed.",
+        "sufficient_soil": "Soil moisture is sufficient.",
+        "upload_leaf": "Upload crop leaf image",
+        "upload_soil": "Upload soil image for record",
+        "detected_issue": "Detected Issue",
+        "solution": "Solution",
+        "growth_stage": "Current Growth Stage",
+        "next_steps": "Next Steps",
+        "update_stage": "Update Growth Stage"
+    },
+    "Kannada": {
+        "title": "ಕೃಷಿ ಸಾಥಿ - ಸ್ಮಾರ್ಟ್ ಕೃಷಿ ಸಹಾಯಕ",
+        "temperature": "ತಾಪಮಾನ (°C)",
+        "rainfall": "ಮಳೆಯ ಪ್ರಮಾಣ (mm)",
+        "soil": "ಮಣ್ಣಿನ ಪ್ರಕಾರ ಆಯ್ಕೆಮಾಡಿ",
+        "black": "ಕಪ್ಪು ಮಣ್ಣು",
+        "red": "ಕೆಂಪು ಮಣ್ಣು",
+        "sandy": "ಮರಳು ಮಣ್ಣು",
+        "clay": "ಚೆಪ್ಪು ಮಣ್ಣು",
+        "recommend": "ಶಿಫಾರಸು ಮಾಡಿದ ಬೆಳೆ",
+        "fertilizer": "ಶಿಫಾರಸು ಮಾಡಿದ ಗೊಬ್ಬರ",
+        "water": "ನೀರಿನ ಅವಶ್ಯಕತೆ",
+        "duration": "ಬೆಳೆ ಬೆಳೆಯುವ ಅವಧಿ",
+        "high_yield": "ಉತ್ತಮ ಫಸಲ್ ನಿರೀಕ್ಷೆ",
+        "moderate_yield": "ಮಧ್ಯಮ ಫಸಲ್ ನಿರೀಕ್ಷೆ",
+        "low_yield": "ಕಡಿಮೆ ಫಸಲ್ ನಿರೀಕ್ಷೆ",
+        "low_rain": "ಕಡಿಮೆ ಮಳೆ ಕಂಡುಬಂದಿದೆ. ತಾಪನ-ಪ್ರತಿರೋಧಕ ಬೆಳೆಗಳನ್ನು ಪರಿಗಣಿಸಿ.",
+        "high_temp": "ಹೆಚ್ಚಿನ ತಾಪಮಾನ. ಸೂಕ್ತ ನೀರಾವರಿ ಖಚಿತಗೊಳಿಸಿ.",
+        "soil_moisture": "ಮಣ್ಣಿನ ತೇವಾಂಶ (%)",
+        "dry_soil": "ಮಣ್ಣು ಒಣವಾಗಿದೆ. ನೀರಾವರಿ ಅಗತ್ಯ.",
+        "sufficient_soil": "ಮಣ್ಣು ತೇವಾಂಶ ಸರಿಹಾಗಿದೆ.",
+        "upload_leaf": "ಬೆಳೆ ಎಲೆ ಚಿತ್ರ ಅಪ್ಲೋಡ್ ಮಾಡಿ",
+        "upload_soil": "ಮಣ್ಣು ಚಿತ್ರ ಅಪ್ಲೋಡ್ ಮಾಡಿ",
+        "detected_issue": "ಕಂಡುಹಿಡಿದ ಸಮಸ್ಯೆ",
+        "solution": "ಪರಿಹಾರ",
+        "growth_stage": "ಪ್ರಸ್ತುತ ಬೆಳೆಯ ಹಂತ",
+        "next_steps": "ಮುಂದಿನ ಹಂತ",
+        "update_stage": "ಬೆಳೆ ಹಂತವನ್ನು تازهಗೊಳಿಸಿ"
+    },
+    "Hindi": {
+        "title": "कृषि साथी - स्मार्ट खेती सहायक",
+        "temperature": "तापमान (°C)",
+        "rainfall": "वर्षा (mm)",
+        "soil": "मिट्टी का प्रकार चुनें",
+        "black": "काली मिट्टी",
+        "red": "लाल मिट्टी",
+        "sandy": "रेतीली मिट्टी",
+        "clay": "चिकनी मिट्टी",
+        "recommend": "अनुशंसित फसल",
+        "fertilizer": "अनुशंसित उर्वरक",
+        "water": "पानी की आवश्यकता",
+        "duration": "फसल बढ़ने का समय",
+        "high_yield": "उच्च उपज की संभावना",
+        "moderate_yield": "मध्यम उपज की संभावना",
+        "low_yield": "कम उपज की संभावना",
+        "low_rain": "कम वर्षा का पता चला। सूखा-प्रतिरोधी फसल चुनें।",
+        "high_temp": "उच्च तापमान। उचित सिंचाई सुनिश्चित करें।",
+        "soil_moisture": "मिट्टी की नमी (%)",
+        "dry_soil": "मिट्टी सूखी है। सिंचाई की आवश्यकता।",
+        "sufficient_soil": "मिट्टी में पर्याप्त नमी है।",
+        "upload_leaf": "फसल की पत्ती का चित्र अपलोड करें",
+        "upload_soil": "मिट्टी की तस्वीर अपलोड करें",
+        "detected_issue": "पहचानी गई समस्या",
+        "solution": "समाधान",
+        "growth_stage": "वर्तमान विकास चरण",
+        "next_steps": "अगले चरण",
+        "update_stage": "विकास चरण अपडेट करें"
+    }
+}
 
-le_crop = LabelEncoder()
-data["crop"] = le_crop.fit_transform(data["crop"])
+t = translations[language]
 
-X = data[["soil_type", "rainfall", "temperature"]]
-y = data["crop"]
+st.title("🌾 " + t["title"])
 
-model = DecisionTreeClassifier()
-model.fit(X, y)
+# --- Soil & Weather Inputs ---
+soil = st.selectbox(t["soil"], [t["black"], t["red"], t["sandy"], t["clay"]])
+temperature = st.slider(t["temperature"], 10, 45, 25)
+rainfall = st.slider(t["rainfall"], 0, 300, 100)
+uploaded_soil = st.file_uploader(t["upload_soil"], type=["jpg","png","jpeg"])
+if uploaded_soil:
+    st.image(uploaded_soil, caption="Uploaded Soil Image", use_column_width=True)
 
-st.header("Enter Farm Details")
+# --- Crop Recommendation ---
+def recommend_crop(soil):
+    mapping = {
+        t["black"]: ("Cotton", "Urea", "Moderate Water Required", "5-6 Months", "https://upload.wikimedia.org/wikipedia/commons/7/78/CottonPlant.JPG"),
+        t["red"]: ("Groundnut", "DAP", "Moderate Water Required", "3-4 Months", "https://upload.wikimedia.org/wikipedia/commons/4/4c/PeanutPlant.jpg"),
+        t["sandy"]: ("Millet", "Compost", "Low Water Required", "2-3 Months", "https://upload.wikimedia.org/wikipedia/commons/5/5e/Millet.jpg"),
+        t["clay"]: ("Rice", "Nitrogen Fertilizer", "High Water Required", "3-4 Months", "https://upload.wikimedia.org/wikipedia/commons/6/6f/RicePlant.jpg")
+    }
+    return mapping[soil]
 
-soil = st.selectbox("Soil Type", ["Loamy", "Sandy", "Clay"])
-rainfall = st.slider("Rainfall (mm)", 100, 800)
-temperature = st.slider("Temperature (°C)", 15, 40)
+if st.button(t["recommend"]):
+    crop, fertilizer, water, duration, image = recommend_crop(soil)
+    st.success(f"{t['recommend']}: {crop}")
+    st.info(f"{t['fertilizer']}: {fertilizer}")
+    st.info(f"{t['water']}: {water}")
+    st.info(f"{t['duration']}: {duration}")
+    st.image(image, caption=crop)
+    # Voice in selected language
+    speak_streamlit(f"{t['recommend']}: {crop}. {t['fertilizer']}: {fertilizer}. {t['water']}: {water}. {t['duration']}: {duration}", lang_code)
 
-if st.button("Predict Crop"):
-    soil_encoded = le_soil.transform([soil])[0]
-    prediction = model.predict([[soil_encoded, rainfall, temperature]])
-    crop = le_crop.inverse_transform(prediction)
+    # Yield prediction in selected language
+    if rainfall > 150:
+        st.info(t["high_yield"])
+        speak_streamlit(t["high_yield"], lang_code)
+    elif rainfall > 80:
+        st.info(t["moderate_yield"])
+        speak_streamlit(t["moderate_yield"], lang_code)
+    else:
+        st.info(t["low_yield"])
+        speak_streamlit(t["low_yield"], lang_code)
+    if rainfall < 50:
+        st.warning(t["low_rain"])
+        speak_streamlit(t["low_rain"], lang_code)
+    if temperature > 35:
+        st.warning(t["high_temp"])
+        speak_streamlit(t["high_temp"], lang_code)
 
-    st.success(f"Recommended Crop: {crop[0]}")
+# --- Session State ---
+if "crop_data" not in st.session_state:
+    st.session_state.crop_data = {"stage":"Germination"}
+if "monitor" not in st.session_state:
+    st.session_state.monitor = {"last_update": date.today(), "stage": st.session_state.crop_data["stage"]}
+
+# --- Growth Tracker / Daily Guidance ---
+st.header("📅 Crop Growth Tracker & Daily Guidance")
+today = date.today()
+days_since_last = (today - st.session_state.monitor["last_update"]).days
+if days_since_last > 0:
+    st.info(f"It's been {days_since_last} day(s) since last update.")
+    st.session_state.monitor["last_update"] = today
+
+stages = ["Germination", "Vegetative", "Flowering", "Harvest"]
+stage = st.selectbox(t["update_stage"], stages, index=stages.index(st.session_state.monitor["stage"]))
+st.session_state.monitor["stage"] = stage
+
+steps_translations = {
+    "Germination": {"English": "Keep soil moist and protect from pests.",
+                    "Kannada": "ಮಣ್ಣು ತೇವವಾಗಿಡಿ ಮತ್ತು ಕೀಟಗಳಿಂದ ರಕ್ಷಿಸಿ.",
+                    "Hindi": "मिट्टी को नम रखें और कीटों से बचाएं।"},
+    "Vegetative": {"English": "Apply recommended fertilizer and ensure proper sunlight.",
+                   "Kannada": "ಶಿಫಾರಸು ಮಾಡಿದ ಗೊಬ್ಬರ ಬಳಸಿ ಮತ್ತು ಸಾಕಷ್ಟು ಸೂರ್ಯರಶ್ಮಿ ಖಚಿತಗೊಳಿಸಿ.",
+                   "Hindi": "अनुशंसित उर्वरक लगाएँ और पर्याप्त धूप सुनिश्चित करें।"},
+    "Flowering": {"English": "Monitor water supply and check for diseases regularly.",
+                  "Kannada": "ನಿಯಮಿತವಾಗಿ ನೀರಿನ ಪ್ರಮಾಣವನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ರೋಗಗಳನ್ನು ತಪಾಸಿಸಿ.",
+                  "Hindi": "पानी की आपूर्ति की निगरानी करें और रोगों की नियमित जाँच करें।"},
+    "Harvest": {"English": "Your crop is ready to harvest! Ensure proper techniques to maximize yield.",
+                "Kannada": "ನಿಮ್ಮ ಬೆಳೆ ಕಟಾಯಿಗಾಗಿ ಸಿದ್ಧವಾಗಿದೆ! ಉತ್ತಮ ಫಲಿತಾಂಶಕ್ಕಾಗಿ ಸೂಕ್ತ ವಿಧಾನಗಳನ್ನು ಅನುಸರಿಸಿ.",
+                "Hindi": "आपकी फसल कटाई के लिए तैयार है! अधिकतम उपज सुनिश्चित करने के लिए सही तकनीक अपनाएँ।"}
+}
+daily_guidance = steps_translations[stage][language]
+st.success(f"{t['next_steps']}: {daily_guidance}")
+speak_streamlit(daily_guidance, lang_code)
+
+# --- Crop Disease Detection ---
+st.header("🌿 Crop Disease Detection")
+uploaded_leaf = st.file_uploader(t["upload_leaf"], type=["jpg","png","jpeg"])
+if uploaded_leaf:
+    st.image(uploaded_leaf, caption="Uploaded Leaf Image", use_column_width=True)
+    diseases_translations = {
+        "Leaf Spot Disease": {"English": "Leaf Spot Disease", "Kannada": "ಎಲೆ ಸ್ಪಾಟ್ ರೋಗ", "Hindi": "लीफ स्पॉट रोग"},
+        "Powdery Mildew": {"English": "Powdery Mildew", "Kannada": "ಪುಡಿ mildew ರೋಗ", "Hindi": "पाउडरी मिल्ड्यू"},
+        "Blight": {"English": "Blight", "Kannada": "ಬ್ಲೈಟ್ ರೋಗ", "Hindi": "ब्लाइट"}
+    }
+    solutions_translations = {
+        "Leaf Spot Disease": {"English": "Use organic fungicide and remove infected leaves.",
+                              "Kannada": "ಸಸ್ಯ ರಕ್ಷಕ ರಸಾಯನ ಬಳಸಿ ಮತ್ತು ಸೋಂಕಿತ ಎಲೆಗಳನ್ನು ತೆಗೆದುಹಾಕಿ.",
+                              "Hindi": "जैविक फफूंदनाशक का उपयोग करें और संक्रमित पत्तियों को हटाएं।"},
+        "Powdery Mildew": {"English": "Spray neem extract regularly.",
+                           "Kannada": "ನಿಯಮಿತವಾಗಿ ನಿಂಬೆ ಎಕ್ಸ್‌ಟ್ರಾಕ್ಟ್ ಸಿಂಚನೆ ಮಾಡಿ.",
+                           "Hindi": "नीम का अर्क नियमित रूप से छिड़कें।"},
+        "Blight": {"English": "Remove affected plants and improve ventilation.",
+                   "Kannada": "ಸಂಪರ್ಕಿತ ಸಸ್ಯಗಳನ್ನು ತೆಗೆದುಹಾಕಿ ಮತ್ತು ವಾತಾವರಣ ಸುಧಾರಿಸಿ.",
+                   "Hindi": "प्रभावित पौधों को हटाएं और हवादारी सुधारें।"}
+    }
+    disease_name = random.choice(list(diseases_translations.keys()))
+    st.success(f"{t['detected_issue']}: {diseases_translations[disease_name][language]}")
+    st.info(f"{t['solution']}: {solutions_translations[disease_name][language]}")
+    speak_streamlit(f"{t['detected_issue']}: {diseases_translations[disease_name][language]}. {t['solution']}: {solutions_translations[disease_name][language]}", lang_code)

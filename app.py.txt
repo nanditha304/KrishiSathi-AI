@@ -1,0 +1,35 @@
+import streamlit as st
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.preprocessing import LabelEncoder
+
+st.title("🌱 KrishiSathi - AI Farming Assistant")
+
+# Load dataset
+data = pd.read_csv("crop_dataset.csv")
+
+# Encode text data
+le_soil = LabelEncoder()
+data["soil_type"] = le_soil.fit_transform(data["soil_type"])
+
+le_crop = LabelEncoder()
+data["crop"] = le_crop.fit_transform(data["crop"])
+
+X = data[["soil_type", "rainfall", "temperature"]]
+y = data["crop"]
+
+model = DecisionTreeClassifier()
+model.fit(X, y)
+
+st.header("Enter Farm Details")
+
+soil = st.selectbox("Soil Type", ["Loamy", "Sandy", "Clay"])
+rainfall = st.slider("Rainfall (mm)", 100, 800)
+temperature = st.slider("Temperature (°C)", 15, 40)
+
+if st.button("Predict Crop"):
+    soil_encoded = le_soil.transform([soil])[0]
+    prediction = model.predict([[soil_encoded, rainfall, temperature]])
+    crop = le_crop.inverse_transform(prediction)
+
+    st.success(f"Recommended Crop: {crop[0]}")

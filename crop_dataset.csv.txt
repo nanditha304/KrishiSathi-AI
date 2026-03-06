@@ -1,0 +1,10 @@
+soil_type,rainfall,temperature,crop
+Loamy,600,25,Rice
+Sandy,300,30,Millet
+Clay,700,24,Rice
+Loamy,500,28,Maize
+Sandy,200,32,Groundnut
+Clay,650,26,Wheat
+Loamy,550,27,Soybean
+Sandy,250,31,Millet
+Clay,600,25,Rice
